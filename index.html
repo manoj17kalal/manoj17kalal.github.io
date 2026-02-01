@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MK Photography</title>
+  <meta name="description" content="Photography portfolio" />
+
+  <style>
+    :root{
+      --bg:#0b0c10; --card:#12141c; --text:#e9eefc; --muted:#aab3c8;
+      --border:rgba(255,255,255,.08); --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(120,80,255,.25), transparent 60%),
+                  radial-gradient(1000px 500px at 90% 10%, rgba(0,180,255,.18), transparent 60%),
+                  var(--bg);
+      -webkit-user-select: none;
+      user-select: none;
+      overflow-x:hidden;
+    }
+
+    /* Make images render sharper on some browsers */
+    img{
+      image-rendering: -webkit-optimize-contrast;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+      -webkit-user-drag: none;
+      user-drag: none;
+      pointer-events: none; /* important: prevents click/open on img itself */
+    }
+
+    .container{max-width:1200px; margin:0 auto; padding:28px 18px 64px;}
+    header{
+      display:flex; gap:16px; align-items:flex-end; justify-content:space-between; flex-wrap:wrap;
+      padding:16px 0 22px;
+    }
+    .title{display:flex; flex-direction:column; gap:6px;}
+    .title h1{margin:0; font-size:28px; letter-spacing:.2px;}
+    .title p{margin:0; color:var(--muted); font-size:14px}
+
+    .controls{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;
+    }
+    select, input{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color:var(--text);
+      border-radius: 999px;
+      padding:10px 12px;
+      outline:none;
+      backdrop-filter: blur(8px);
+    }
+    input{min-width:240px;}
+    @media (max-width: 620px){ input{min-width: 160px;} }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:14px;
+    }
+    .card{
+      grid-column: span 4;
+      background: rgba(255,255,255,.03);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      position:relative;
+      cursor: zoom-in;
+      min-height: 240px;
+      outline: none;
+    }
+    @media (max-width: 980px){ .card{grid-column: span 6;} }
+    @media (max-width: 620px){ .card{grid-column: span 12;} }
+
+    .thumb{
+      width:100%; height:100%;
+      display:block;
+      object-fit: cover;
+      transform: scale(1.01);
+      transition: transform .25s ease;
+      pointer-events:none;
+    }
+    .card:hover .thumb{transform: scale(1.05);}
+
+    .overlay{
+      position:absolute; inset:auto 0 0 0;
+      padding:10px 12px;
+      background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0));
+      display:flex; align-items:flex-end; justify-content:space-between; gap:10px;
+      pointer-events:none;
+    }
+    .meta{display:flex; flex-direction:column; gap:2px;}
+    .meta .name{font-size:13px; font-weight:600; line-height:1.2}
+    .meta .tag{font-size:12px; color:rgba(233,238,252,.78)}
+    .badge{
+      font-size:11px;
+      color: rgba(233,238,252,.9);
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      padding:6px 10px;
+      border-radius: 999px;
+      white-space:nowrap;
+    }
+
+    .footer{
+      margin-top:22px;
+      color: var(--muted);
+      font-size:13px;
+      display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+
+    .empty{
+      border:1px dashed rgba(255,255,255,.22);
+      border-radius: 18px;
+      padding:20px;
+      color:var(--muted);
+      text-align:center;
+      grid-column: 1 / -1;
+    }
+
+    /* Lightbox */
+    .lightbox{
+      position:fixed; inset:0; z-index:50;
+      display:none;
+      align-items:center; justify-content:center;
+      background: rgba(0,0,0,.88);
+      padding:18px;
+    }
+    .lightbox.open{display:flex;}
+    .lb-panel{
+      width:min(1150px, 100%);
+      background: rgba(20,22,30,.92);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 20px;
+      overflow:hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,.6);
+      display:grid;
+      grid-template-columns: 1fr;
+    }
+    .lb-img-wrap{
+      background:#000;
+      display:flex; align-items:center; justify-content:center;
+      max-height: 80vh;
+      position:relative;
+    }
+    .lb-img{
+      width:100%;
+      height:100%;
+      max-height:80vh;
+      object-fit: contain;
+      display:block;
+      pointer-events:none;
+    }
+    .lb-bar{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      padding:12px 12px;
+    }
+    .lb-left{display:flex; flex-direction:column; gap:2px;}
+    .lb-left .lb-title{font-weight:700; font-size:14px}
+    .lb-left .lb-sub{color:var(--muted); font-size:12px}
+
+    .btns{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+    .btn{
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding:9px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-size: 13px;
+    }
+    .btn:hover{border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.1);}
+
+    .watermark{
+      position:absolute;
+      bottom:10px; right:12px;
+      padding:6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.35);
+      color: rgba(233,238,252,.85);
+      font-size: 12px;
+      pointer-events:none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <header>
+      <div class="title">
+        <h1>MK Photography</h1>
+        <p>Gallery • Tap any photo to view</p>
+      </div>
+
+      <div class="controls">
+        <input id="search" type="search" placeholder="Search (photo # or category)..." />
+        <select id="category">
+          <option value="all">All categories</option>
+        </select>
+      </div>
+    </header>
+
+    <main>
+      <div id="grid" class="grid"></div>
+      <div class="footer">
+        <div id="count"></div>
+        <div>Keyboard: <b>←</b> / <b>→</b> • Close: <b>Esc</b></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox" aria-hidden="true">
+    <div class="lb-panel" role="dialog" aria-modal="true">
+      <div class="lb-img-wrap">
+        <img id="lbImg" class="lb-img" alt="Selected photo" draggable="false" />
+        <div class="watermark">© My Photography</div>
+      </div>
+      <div class="lb-bar">
+        <div class="lb-left">
+          <div id="lbTitle" class="lb-title"></div>
+          <div id="lbSub" class="lb-sub"></div>
+        </div>
+        <div class="btns">
+          <button id="prevBtn" class="btn" type="button">← Prev</button>
+          <button id="nextBtn" class="btn" type="button">Next →</button>
+          <button id="closeBtn" class="btn" type="button">Close ✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ========= YOUR PHOTOS (thumb + full) ========= */
+const photos = [
+  { thumb: "https://i.postimg.cc/TPTNn3sr/521853758-18213394042307191-5437867060049944641-n.jpg", full: "https://i.postimg.cc/TPTNn3sr/521853758-18213394042307191-5437867060049944641-n.jpg", title: "Photo 1", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/d0nH6KMZ/523771341-18214206625307191-6228210028516710723-n.jpg", full: "https://i.postimg.cc/d0nH6KMZ/523771341-18214206625307191-6228210028516710723-n.jpg", title: "Photo 2", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/6QBbCpPf/524387216-18213593146307191-7258820435726383838-n.jpg", full: "https://i.postimg.cc/6QBbCpPf/524387216-18213593146307191-7258820435726383838-n.jpg", title: "Photo 3", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/CKJP7Vyf/528043676-18214617715307191-5461557783361497548-n.jpg", full: "https://i.postimg.cc/CKJP7Vyf/528043676-18214617715307191-5461557783361497548-n.jpg", title: "Photo 4", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/xdgx5Srm/541229984-18217221883307191-1140736918383080928-n.jpg", full: "https://i.postimg.cc/xdgx5Srm/541229984-18217221883307191-1140736918383080928-n.jpg", title: "Photo 5", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/1zMCBZxq/543628455-18217808191307191-5492334329510981677-n.jpg", full: "https://i.postimg.cc/1zMCBZxq/543628455-18217808191307191-5492334329510981677-n.jpg", title: "Photo 6", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/XvxHL0MF/543687243-18218357092307191-7331709938708039736-n.jpg", full: "https://i.postimg.cc/XvxHL0MF/543687243-18218357092307191-7331709938708039736-n.jpg", title: "Photo 7", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/MGtP58kV/561724302-18222255775307191-7841360592692098046-n.jpg", full: "https://i.postimg.cc/MGtP58kV/561724302-18222255775307191-7841360592692098046-n.jpg", title: "Photo 8", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/xdgx5Sry/573559243-18226949101307191-6616455612357120427-n.jpg", full: "https://i.postimg.cc/xdgx5Sry/573559243-18226949101307191-6616455612357120427-n.jpg", title: "Photo 9", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/q7QbwdfL/583000541-18227400301307191-8867357613849915908-n.jpg", full: "https://i.postimg.cc/q7QbwdfL/583000541-18227400301307191-8867357613849915908-n.jpg", title: "Photo 10", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/SKVTdp0V/587551019-18228615811307191-7246999994707898080-n.jpg", full: "https://i.postimg.cc/SKVTdp0V/587551019-18228615811307191-7246999994707898080-n.jpg", title: "Photo 11", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/25C9nStF/587806796-18293224336287701-3580470004711941856-n.jpg", full: "https://i.postimg.cc/25C9nStF/587806796-18293224336287701-3580470004711941856-n.jpg", title: "Photo 12", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/wBFf2dK4/588068318-18233458636307191-5360407352241324330-n.jpg", full: "https://i.postimg.cc/wBFf2dK4/588068318-18233458636307191-5360407352241324330-n.jpg", title: "Photo 13", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/KYQqfyXJ/588418642-18229372822307191-742082666333533407-n.jpg", full: "https://i.postimg.cc/KYQqfyXJ/588418642-18229372822307191-742082666333533407-n.jpg", title: "Photo 14", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/Dz7p1wNr/588709826-18293224327287701-7585792070186127142-n.jpg", full: "https://i.postimg.cc/Dz7p1wNr/588709826-18293224327287701-7585792070186127142-n.jpg", title: "Photo 15", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/9f18bj3b/589117656-18228892402307191-505032801174906698-n.jpg", full: "https://i.postimg.cc/9f18bj3b/589117656-18228892402307191-505032801174906698-n.jpg", title: "Photo 16", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/FHynfLDD/601318094-18293134969287701-8767191568865838742-n.jpg", full: "https://i.postimg.cc/FHynfLDD/601318094-18293134969287701-8767191568865838742-n.jpg", title: "Photo 17", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/pLf19Fq4/601430512-18293134978287701-9173150469658913817-n.jpg", full: "https://i.postimg.cc/pLf19Fq4/601430512-18293134978287701-9173150469658913817-n.jpg", title: "Photo 18", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/wjXbtm0C/601498935-18293134924287701-4063063439753195185-n.jpg", full: "https://i.postimg.cc/wjXbtm0C/601498935-18293134924287701-4063063439753195185-n.jpg", title: "Photo 19", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/sgY0Bhw6/601779192-18293134915287701-2858427028972055047-n.jpg", full: "https://i.postimg.cc/sgY0Bhw6/601779192-18293134915287701-2858427028972055047-n.jpg", title: "Photo 20", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/6QzjcNsH/606821613-18231714781307191-3864594398989837214-n.jpg", full: "https://i.postimg.cc/6QzjcNsH/606821613-18231714781307191-3864594398989837214-n.jpg", title: "Photo 21", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/wBFf2dKw/606972304-18231617170307191-7200451397910077301-n.jpg", full: "https://i.postimg.cc/wBFf2dKw/606972304-18231617170307191-7200451397910077301-n.jpg", title: "Photo 22", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/d0nH6KMz/607697258-18074956046599406-1708259707882234492-n.jpg", full: "https://i.postimg.cc/d0nH6KMz/607697258-18074956046599406-1708259707882234492-n.jpg", title: "Photo 23", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/wjXbtmw8/609062930-18295144828287701-2513498047710402448-n.jpg", full: "https://i.postimg.cc/wjXbtmw8/609062930-18295144828287701-2513498047710402448-n.jpg", title: "Photo 24", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/Nj6PyHdc/609317096-18295144738287701-1919680616122694731-n.jpg", full: "https://i.postimg.cc/Nj6PyHdc/609317096-18295144738287701-1919680616122694731-n.jpg", title: "Photo 25", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/9QdN47JN/609413892-18295144864287701-5342716848203541864-n.jpg", full: "https://i.postimg.cc/9QdN47JN/609413892-18295144864287701-5342716848203541864-n.jpg", title: "Photo 26", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/nh4wsD3f/609510291-18295144765287701-471017942156124102-n.jpg", full: "https://i.postimg.cc/nh4wsD3f/609510291-18295144765287701-471017942156124102-n.jpg", title: "Photo 27", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/d0nH6KMS/609684430-18232826494307191-8001598724086637732-n.jpg", full: "https://i.postimg.cc/d0nH6KMS/609684430-18232826494307191-8001598724086637732-n.jpg", title: "Photo 28", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/rw1Ydrf6/609794648-18295144819287701-9072431933482097054-n.jpg", full: "https://i.postimg.cc/rw1Ydrf6/609794648-18295144819287701-9072431933482097054-n.jpg", title: "Photo 29", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/XYfDZCsW/610620300-18295144720287701-6568849872917381561-n.jpg", full: "https://i.postimg.cc/XYfDZCsW/610620300-18295144720287701-6568849872917381561-n.jpg", title: "Photo 30", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/kgQhVbTd/610655731-18295144756287701-4972043158199809276-n.jpg", full: "https://i.postimg.cc/kgQhVbTd/610655731-18295144756287701-4972043158199809276-n.jpg", title: "Photo 31", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/rmmhYYcY/610734584-18076144538599406-7894665644161123208-n.jpg", full: "https://i.postimg.cc/rmmhYYcY/610734584-18076144538599406-7894665644161123208-n.jpg", title: "Photo 32", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/fb52Ch4G/610846172-18076142876599406-5236247853128638163-n.jpg", full: "https://i.postimg.cc/fb52Ch4G/610846172-18076142876599406-5236247853128638163-n.jpg", title: "Photo 33", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/MGtP5822/611236281-18076142846599406-3167478581208085900-n.jpg", full: "https://i.postimg.cc/MGtP5822/611236281-18076142846599406-3167478581208085900-n.jpg", title: "Photo 34", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/k44jhh9H/611273558-18076142819599406-8770391421594340585-n.jpg", full: "https://i.postimg.cc/k44jhh9H/611273558-18076142819599406-8770391421594340585-n.jpg", title: "Photo 35", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/gJJMBBdt/611298325-18076142837599406-1139969188330383329-n.jpg", full: "https://i.postimg.cc/gJJMBBdt/611298325-18076142837599406-1139969188330383329-n.jpg", title: "Photo 36", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/wjXbtmwx/612120939-18295768657287701-1717936658779487322-n.jpg", full: "https://i.postimg.cc/wjXbtmwx/612120939-18295768657287701-1717936658779487322-n.jpg", title: "Photo 37", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/nzzdwwZ6/612224109-18076142783599406-1314515756503123853-n.jpg", full: "https://i.postimg.cc/nzzdwwZ6/612224109-18076142783599406-1314515756503123853-n.jpg", title: "Photo 38", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/nh4wsD3F/612490644-18295768639287701-4717320697455523250-n.jpg", full: "https://i.postimg.cc/nh4wsD3F/612490644-18295768639287701-4717320697455523250-n.jpg", title: "Photo 39", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/6pr17vM5/612550759-18295768621287701-4649499052387883399-n.jpg", full: "https://i.postimg.cc/6pr17vM5/612550759-18295768621287701-4649499052387883399-n.jpg", title: "Photo 40", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/nLTR2t8W/612607115-18233373544307191-7204733631352248153-n.jpg", full: "https://i.postimg.cc/nLTR2t8W/612607115-18233373544307191-7204733631352248153-n.jpg", title: "Photo 41", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/P5WFLwS5/612614484-18295768594287701-523181613760072067-n.jpg", full: "https://i.postimg.cc/P5WFLwS5/612614484-18295768594287701-523181613760072067-n.jpg", title: "Photo 42", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/q7pD2vFd/613067839-18295854682287701-1846958491181742396-n.jpg", full: "https://i.postimg.cc/q7pD2vFd/613067839-18295854682287701-1846958491181742396-n.jpg", title: "Photo 43", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/DwrYWXxn/613108589-18295768714287701-3265711094737988279-n.jpg", full: "https://i.postimg.cc/DwrYWXxn/613108589-18295768714287701-3265711094737988279-n.jpg", title: "Photo 44", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/ZqJs65Qt/613131806-18295854814287701-4857685983210733009-n.jpg", full: "https://i.postimg.cc/ZqJs65Qt/613131806-18295854814287701-4857685983210733009-n.jpg", title: "Photo 45", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/cJdkfLzs/613139639-18295854643287701-730614827111989765-n.jpg", full: "https://i.postimg.cc/cJdkfLzs/613139639-18295854643287701-730614827111989765-n.jpg", title: "Photo 46", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/Dz7p1wN3/613583449-18295854787287701-5728199830841237379-n.jpg", full: "https://i.postimg.cc/Dz7p1wN3/613583449-18295854787287701-5728199830841237379-n.jpg", title: "Photo 47", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/25C9nSty/619484511-18297393073287701-879812943026027483-n.jpg", full: "https://i.postimg.cc/25C9nSty/619484511-18297393073287701-879812943026027483-n.jpg", title: "Photo 48", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/QMjYcdzK/619603677-18297393064287701-6992365333426295893-n.jpg", full: "https://i.postimg.cc/QMjYcdzK/619603677-18297393064287701-6992365333426295893-n.jpg", title: "Photo 49", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/8CTXLzYN/619768450-18297393148287701-798574629508981604-n.jpg", full: "https://i.postimg.cc/8CTXLzYN/619768450-18297393148287701-798574629508981604-n.jpg", title: "Photo 50", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/d0JNGVfr/619848455-18297393022287701-3469213490027685525-n.jpg", full: "https://i.postimg.cc/d0JNGVfr/619848455-18297393022287701-3469213490027685525-n.jpg", title: "Photo 51", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/VNzZXkhC/619892028-18297393031287701-2284945912495483686-n.jpg", full: "https://i.postimg.cc/VNzZXkhC/619892028-18297393031287701-2284945912495483686-n.jpg", title: "Photo 52", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/SKVTdp05/619899758-18234530320307191-2564784539787339216-n.jpg", full: "https://i.postimg.cc/SKVTdp05/619899758-18234530320307191-2564784539787339216-n.jpg", title: "Photo 53", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/1zy7D3dQ/619911077-18297393157287701-2480292565667555296-n.jpg", full: "https://i.postimg.cc/1zy7D3dQ/619911077-18297393157287701-2480292565667555296-n.jpg", title: "Photo 54", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/JhRYjzFX/619970682-18297393043287701-6674954187744602850-n.jpg", full: "https://i.postimg.cc/JhRYjzFX/619970682-18297393043287701-6674954187744602850-n.jpg", title: "Photo 55", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/25C9nStn/619986367-18297394309287701-4003063068361237288-n.jpg", full: "https://i.postimg.cc/25C9nStn/619986367-18297394309287701-4003063068361237288-n.jpg", title: "Photo 56", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/CKwrbx2Z/620325898-18297393091287701-8564642337431701357-n.jpg", full: "https://i.postimg.cc/CKwrbx2Z/620325898-18297393091287701-8564642337431701357-n.jpg", title: "Photo 57", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/6QBbCpP3/620850657-18297393112287701-3260632473840097462-n.jpg", full: "https://i.postimg.cc/6QBbCpP3/620850657-18297393112287701-3260632473840097462-n.jpg", title: "Photo 58", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/1zy7D3dn/620860867-18297393052287701-922552048179070376-n.jpg", full: "https://i.postimg.cc/1zy7D3dn/620860867-18297393052287701-922552048179070376-n.jpg", title: "Photo 59", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/R0vpwZYC/621143835-18297393130287701-2534486516322424845-n.jpg", full: "https://i.postimg.cc/R0vpwZYC/621143835-18297393130287701-2534486516322424845-n.jpg", title: "Photo 60", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/ZqJs65Q5/621259392-18297393121287701-2971535272117428306-n.jpg", full: "https://i.postimg.cc/ZqJs65Q5/621259392-18297393121287701-2971535272117428306-n.jpg", title: "Photo 61", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/R0vpwZYW/621299865-18297393082287701-3838908425512165605-n.jpg", full: "https://i.postimg.cc/R0vpwZYW/621299865-18297393082287701-3838908425512165605-n.jpg", title: "Photo 62", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/pTT011xw/623007760-18078296429599406-1507078818151029084-n.jpg", full: "https://i.postimg.cc/pTT011xw/623007760-18078296429599406-1507078818151029084-n.jpg", title: "Photo 63", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/V667HHmQ/623090017-18078296438599406-7592643639109418817-n.jpg", full: "https://i.postimg.cc/V667HHmQ/623090017-18078296438599406-7592643639109418817-n.jpg", title: "Photo 64", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/hGMysqF6/623397207-18235224136307191-8122531796155306244-n.jpg", full: "https://i.postimg.cc/hGMysqF6/623397207-18235224136307191-8122531796155306244-n.jpg", title: "Photo 65", category: "Gallery" },
+  { thumb: "https://i.postimg.cc/G22MSSdt/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al.jpg", full: "https://i.postimg.cc/G22MSSdt/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al.jpg", title: "Photo 66", category: "Babies" },
+  { thumb: "https://i.postimg.cc/766BQQwP/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(1).jpg", full: "https://i.postimg.cc/766BQQwP/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(1).jpg", title: "Photo 67", category: "Babies" },
+  { thumb: "https://i.postimg.cc/3RRLbbYJ/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(2).jpg", full: "https://i.postimg.cc/3RRLbbYJ/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(2).jpg", title: "Photo 68", category: "Babies" },
+  { thumb: "https://i.postimg.cc/3RRLbbYK/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(3).jpg", full: "https://i.postimg.cc/3RRLbbYK/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(3).jpg", title: "Photo 69", category: "Babies" },
+  { thumb: "https://i.postimg.cc/XJJ2DD44/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(4).jpg", full: "https://i.postimg.cc/XJJ2DD44/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(4).jpg", title: "Photo 70", category: "Babies" },
+  { thumb: "https://i.postimg.cc/gJJMBBmP/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(5).jpg", full: "https://i.postimg.cc/gJJMBBmP/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(5).jpg", title: "Photo 71", category: "Babies" },
+  { thumb: "https://i.postimg.cc/pTT011RN/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(6).jpg", full: "https://i.postimg.cc/pTT011RN/Finally-posting-some-adorable-babies-from-the-mini-sessions-I-had-last-month-So-grateful-for-al-(6).jpg", title: "Photo 72", category: "Babies" },
+];
+
+/* ========= APP ========= */
+const els = {
+  grid: document.getElementById('grid'),
+  count: document.getElementById('count'),
+  search: document.getElementById('search'),
+  category: document.getElementById('category'),
+  lightbox: document.getElementById('lightbox'),
+  lbImg: document.getElementById('lbImg'),
+  lbTitle: document.getElementById('lbTitle'),
+  lbSub: document.getElementById('lbSub'),
+  prevBtn: document.getElementById('prevBtn'),
+  nextBtn: document.getElementById('nextBtn'),
+  closeBtn: document.getElementById('closeBtn'),
+};
+
+let state = {
+  q: '',
+  category: 'all',
+  filtered: [],
+  lbIndex: -1,
+};
+
+function uniqueCategories(items){
+  const set = new Set(items.map(p => (p.category || '').trim()).filter(Boolean));
+  return Array.from(set).sort((a,b)=>a.localeCompare(b));
+}
+
+function matches(p){
+  const q = state.q.trim().toLowerCase();
+  const inCategory = (state.category === 'all') || ((p.category || '').toLowerCase() === state.category);
+  if (!inCategory) return false;
+  if (!q) return true;
+  const hay = `${p.title || ''} ${p.category || ''}`.toLowerCase();
+  return hay.includes(q);
+}
+
+function buildCategoryDropdown(){
+  const cats = uniqueCategories(photos);
+  while (els.category.options.length > 1) els.category.remove(1);
+  cats.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.toLowerCase();
+    opt.textContent = c;
+    els.category.appendChild(opt);
+  });
+}
+
+function render(){
+  state.filtered = photos.filter(matches);
+  els.grid.innerHTML = '';
+
+  if (state.filtered.length === 0){
+    const div = document.createElement('div');
+    div.className = 'empty';
+    div.textContent = 'No photos match your search/filter.';
+    els.grid.appendChild(div);
+  } else {
+    state.filtered.forEach((p, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', `Open ${p.title || ('Photo ' + (idx+1))}`);
+
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      img.loading = 'lazy';
+      img.src = p.thumb || p.full;
+      img.alt = p.title || `Photo ${idx+1}`;
+      img.draggable = false;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = p.title || `Photo ${idx+1}`;
+
+      const tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.textContent = p.category || '';
+
+      meta.appendChild(name);
+      meta.appendChild(tag);
+
+      const badge = document.createElement('div');
+      badge.className = 'badge';
+      badge.textContent = p.category || 'Photo';
+
+      overlay.appendChild(meta);
+      overlay.appendChild(badge);
+
+      card.appendChild(img);
+      card.appendChild(overlay);
+
+      // Open lightbox by clicking the CARD (not the image)
+      card.addEventListener('click', (e) => { e.preventDefault(); openLightbox(idx); });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(idx); }
+      });
+
+      els.grid.appendChild(card);
+    });
+  }
+
+  els.count.textContent = `${state.filtered.length} / ${photos.length} photos`;
+}
+
+function openLightbox(filteredIndex){
+  state.lbIndex = filteredIndex;
+  const p = state.filtered[state.lbIndex];
+  if (!p) return;
+
+  els.lbImg.src = p.full || p.thumb;
+  els.lbTitle.textContent = p.title || 'Photo';
+  els.lbSub.textContent = p.category ? p.category : '—';
+
+  els.lightbox.classList.add('open');
+  els.lightbox.setAttribute('aria-hidden', 'false');
+}
+
+function closeLightbox(){
+  els.lightbox.classList.remove('open');
+  els.lightbox.setAttribute('aria-hidden', 'true');
+  state.lbIndex = -1;
+}
+
+function step(dir){
+  if (state.lbIndex < 0) return;
+  const next = state.lbIndex + dir;
+  if (next < 0 || next >= state.filtered.length) return;
+  openLightbox(next);
+}
+
+/* Controls */
+els.search.addEventListener('input', (e) => {
+  state.q = e.target.value;
+  render();
+});
+els.category.addEventListener('change', (e) => {
+  state.category = e.target.value;
+  render();
+});
+els.closeBtn.addEventListener('click', closeLightbox);
+els.prevBtn.addEventListener('click', () => step(-1));
+els.nextBtn.addEventListener('click', () => step(1));
+
+/* Close if click outside panel */
+els.lightbox.addEventListener('click', (e) => {
+  if (e.target === els.lightbox) closeLightbox();
+});
+
+/* Keyboard nav */
+window.addEventListener('keydown', (e) => {
+  if (!els.lightbox.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowRight') step(1);
+});
+
+/* ========= ANTI-DOWNLOAD (best-effort) =========
+   Note: Cannot fully prevent screenshots or DevTools saving.
+*/
+document.addEventListener('contextmenu', (e) => e.preventDefault());      // disables right click
+document.addEventListener('dragstart', (e) => e.preventDefault());       // disables dragging images
+document.addEventListener('selectstart', (e) => e.preventDefault());     // disables text selection
+
+function init(){
+  buildCategoryDropdown();
+  render();
+}
+init();
+</script>
+
+</body>
+</html>
